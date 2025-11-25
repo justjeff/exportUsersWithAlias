@@ -1,0 +1,11 @@
+# Apps Script CLASP Files
+.clasp.json
+.clasprc.json
+.clasprc.json.enc
+node_modules/
+*.log
+
+# IDE/System files
+.vscode/
+.DS_Store
+Thumbs.db
