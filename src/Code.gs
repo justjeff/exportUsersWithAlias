@@ -1,61 +1,89 @@
-/**
- * Fetches all users in the domain, filters for those with aliases,
- * and exports the data to a new Google Sheet.
- */
+// Function to get the formatted date string
+function getFormattedDate() {
+  // Formatted date for the spreadsheet name
+  const formattedDate = Utilities.formatDate(
+      new Date(),
+      Session.getScriptTimeZone(),
+      'yyyy-MM-dd_HH-mm-ss',
+  );
+
+  Logger.log("date: " + formattedDate);
+  return formattedDate;
+}
+
+// Main function to export users with aliases
 function exportUsersWithAliases() {
-  // 1. Setup & Initialization
-  const spreadsheetName = "Users with Aliases Report";
-  const sheet = SpreadsheetApp.create(spreadsheetName).getActiveSheet();
-  const data = [];
-  const headers = ["Primary Email", "Full Name", "Aliases (Comma Separated)"];
+  try {
+    // Create a new spreadsheet
+    const formattedDate = getFormattedDate();
+    const spreadsheetName = "Users with Aliases Report " + formattedDate;
 
-  let pageToken;
+    const spreadsheet = SpreadsheetApp.create(spreadsheetName);
+    const sheet = spreadsheet.getActiveSheet();
 
-  // Add the headers to the sheet
-  data.push(headers);
+    Logger.log("Spreadsheet created: " + spreadsheet.getUrl());
+    const data = [];
+    const headers = ["Primary Email", "Full Name", "Aliases (Comma Separated)"];
 
-  Logger.log("Starting user fetch from Admin Directory...");
+    let pageToken;
 
-  // 2. Paginated Fetch Loop
-  // The Directory API returns results in pages, so a do/while loop is necessary.
-  do {
-    // List up to 500 users per API call
-    const response = AdminDirectory.Users.list({
-      customer: 'my_customer', // Use 'my_customer' for your own domain
-      maxResults: 500,
-      fields: 'nextPageToken,users(primaryEmail,name,aliases)', // Only retrieve necessary fields
-      pageToken: pageToken
-    });
+    // Add the headers to the sheet
+    data.push(headers);
 
-    const users = response.users;
+    Logger.log("Starting user fetch...");
 
-    if (users && users.length > 0) {
-      // 3. Filter and Process Users
-      users.forEach(user => {
-        // The aliases property will be an array only if aliases exist
-        if (user.aliases && user.aliases.length > 0) {
-          const aliasList = user.aliases.join(', '); // Join aliases into a single string
-
-          data.push([
-            user.primaryEmail,
-            user.name.fullName,
-            aliasList
-          ]);
-        }
+    // Fetch users from the Directory API
+    // The Directory API returns results in pages, so a do/while loop is necessary.
+    do {
+      // List up to 500 users per API call
+      const response = AdminDirectory.Users.list({
+        customer: 'my_customer',
+        maxResults: 500,
+        fields: 'nextPageToken,users(primaryEmail,name,aliases)', // Only retrieve necessary fields
+        pageToken: pageToken
       });
+
+      const users = response.users;
+
+      if (users && users.length > 0) {
+        // 3. Filter and Process Users
+        users.forEach(user => {
+          // The aliases property will be an array only if aliases exist
+          if (user.aliases && user.aliases.length > 0) {
+            const aliasList = user.aliases.join(', '); // Join aliases into a single string
+
+            data.push([
+              user.primaryEmail,
+              user.name.fullName,
+              aliasList
+            ]);
+          }
+        });
+        Logger.log("Processed %s users in this page.", users.length);
+      } else {
+        Logger.log("No users found in this page.");
+      }
+
+      // Prepare for the next page
+      pageToken = response.nextPageToken;
+
+    } while (pageToken);
+
+    // 4. Write Data to Sheet
+    if (data.length > 1) {
+      sheet.getRange(1, 1, data.length, data[0].length).setValues(data);
+      Logger.log("Export complete! Found %s users with aliases.", data.length - 1);
+      Logger.log("Spreadsheet URL: " + spreadsheet.getUrl());
+      Logger.log("Spreadsheet ID: " + spreadsheet.getId());
+    } else {
+      sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+      Logger.log("Export complete! No users with aliases were found.");
+      Logger.log("Spreadsheet URL: " + spreadsheet.getUrl());
+      Logger.log("Spreadsheet ID: " + spreadsheet.getId());
     }
-
-    // Prepare for the next page
-    pageToken = response.nextPageToken;
-
-  } while (pageToken);
-
-  // 4. Write Data to Sheet
-  if (data.length > 1) {
-    sheet.getRange(1, 1, data.length, data[0].length).setValues(data);
-    Logger.log("Export complete! Found %s users with aliases.", data.length - 1);
-  } else {
-    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
-    Logger.log("Export complete! No users with aliases were found.");
+  } catch (error) {
+    Logger.log('Error exporting users with aliases: ' + error.message);
+    Logger.log(error.stack);
+    throw error;
   }
 }
