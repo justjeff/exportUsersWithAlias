@@ -11,9 +11,9 @@ The script requires the Admin Directory API to be enabled in the Apps Script pro
 [CLASP](https://github.com/google/clasp) is a Node.js tool for working with Google Apps locally.
 
 1. **File Structure:** This repo uses ./src as the project root. From the repo parent folder, run `clasp create` to set the root and project name.
-```shell
-$ clasp create --rootDir ./src --title "exportUsersWithAlias"
-```
+   ```shell
+   $ clasp create --rootDir ./src --title "exportUsersWithAlias"
+   ```
 2. **Configuration:** Ensure `appscript.json` in `./src` reflects your project needs; e.g, `timeZone`.
 3. **Push Code:** run `clasp push` to push your code/changes to the Google Apps Script environment.
    ```shell
