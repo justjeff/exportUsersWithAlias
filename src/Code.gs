@@ -1,27 +1,22 @@
-// Function to get the formatted date string
-function getFormattedDate() {
-  // Formatted date for the spreadsheet name
-  const formattedDate = Utilities.formatDate(
-      new Date(),
-      Session.getScriptTimeZone(),
-      'yyyy-MM-dd_HH-mm-ss',
-  );
-
-  Logger.log("date: " + formattedDate);
-  return formattedDate;
+// Entry point for the web app.
+function doGet() {
+  return HtmlService.createTemplateFromFile('Index')
+      .evaluate()
+      .setTitle('Admin User Alias Report Tool');
 }
 
 // Main function to export users with aliases
 function exportUsersWithAliases() {
   try {
-    // Create a new spreadsheet
+    // Get date
     const formattedDate = getFormattedDate();
+
+    // Create a new spreadsheet
     const spreadsheetName = "Users with Aliases Report " + formattedDate;
 
-    const spreadsheet = SpreadsheetApp.create(spreadsheetName);
+    const spreadsheet = createSpreadsheetInFolder(spreadsheetName, targetFolderId);
     const sheet = spreadsheet.getActiveSheet();
 
-    Logger.log("Spreadsheet created: " + spreadsheet.getUrl());
     const data = [];
     const headers = ["Primary Email", "Full Name", "Aliases (Comma Separated)"];
 
@@ -46,7 +41,7 @@ function exportUsersWithAliases() {
       const users = response.users;
 
       if (users && users.length > 0) {
-        // 3. Filter and Process Users
+        // Filter and Process Users
         users.forEach(user => {
           // The aliases property will be an array only if aliases exist
           if (user.aliases && user.aliases.length > 0) {

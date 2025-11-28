@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+<style>
+  /* Import Tailwind from helper */
+  <?!= getCompiledTailwind() ?>
+</style>
+</head>
+<body>
+
+  <h2>Google Workspace User Alias Report</h2>
+  <p>
+    This tool uses the Admin Directory API to generate a report of all users with email aliases.
+  </p>
+
+  <p>
+    Enter a Google Drive **Folder ID** below to specify the location for the new spreadsheet. If left blank, the report will be saved in your **My Drive root folder**.
+  </p>
+
+  <label for="folderId">Target Folder ID:</label>
+  <input type="text" id="folderId" placeholder="e.g., 1A2b3C4d5E6fG7hI8jK9lM0nO - (Optional)">
+
+  <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" id="runButton" onclick="generateReport()">Run Alias Report</button>
+
+  <div id="status"></div>
+
+  <script>
+    /**
+     * Client-side function that collects the input and calls the server-side function.
+     */
+    function generateReport() {
+      const folderId = document.getElementById('folderId').value.trim();
+      const statusDiv = document.getElementById('status');
+      const runButton = document.getElementById('runButton');
+
+      // 1. Disable button and update status while running
+      runButton.disabled = true;
+      statusDiv.className = '';
+      statusDiv.innerHTML = '⚙️ Report running... The server is processing the request.';
+
+      // 2. Call the server function, passing the folderId collected from the form.
+      // The server function is runReportFromClient, defined in Code.gs.
+      google.script.run
+        .withSuccessHandler(onSuccess)
+        .withFailureHandler(onError)
+        .runReportFromClient(folderId);
+    }
+
+    /**
+     * Handles successful return from the server.
+     */
+    function onSuccess(result) {
+      document.getElementById('status').className = 'success';
+      document.getElementById('status').innerHTML = result;
+      document.getElementById('runButton').disabled = false;
+    }
+
+    /**
+     * Handles error return from the server.
+     */
+    function onError(error) {
+      document.getElementById('status').className = 'error';
+      document.getElementById('status').innerHTML = error;
+      document.getElementById('runButton').disabled = false;
+    }
+  </script>
+
+</body>
+</html>
